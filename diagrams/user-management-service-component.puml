@@ -1,0 +1,47 @@
+@startuml C4_Components
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Компонентная диаграмма сервиса управления пользователями
+
+Container_Boundary(user_service, "User Management Service") {
+    Component(user_management_api, "User Management API", , "REST API для управления пользователями")
+
+    Component(auth_service, "Auth Service", , "Аутентификация/авторизация пользователей")
+    Component(user_management, "User Management", , "Управление пользователями и ролями")
+
+    Component(house_management, "User House Management", , "Управление домами и помещениями пользователя")
+
+    Component(broker_producer, "Broker Producer", , "Отправка сообщений в брокер")
+
+}
+
+
+' Внешние системы
+Container_Ext(api_gateway, "API Gateway", "Kong")
+Container_Ext(user_db, "User Database", "PostgreSQL")
+Container_Ext(kafka, "Message Broker", "Kafka")
+
+' API взаимодействия
+Rel(api_gateway, user_management_api, "Отправляет запросы", "REST/JSON")
+Rel(user_management_api, user_management, "Использует", "REST")
+Rel(user_management_api, auth_service, "Отправляет/получает данные", "REST")
+Rel(user_management_api, house_management, "Отправляет/получает данные", "REST")
+
+' Взаимодействие между сервисами
+Rel(user_management, broker_producer, "Публикует изменения", "REST")
+Rel(house_management, broker_producer, "Публикует изменения", "REST")
+
+
+' Kafka взаимодействия
+Rel(broker_producer, kafka, "Публикует события", "Kafka")
+
+
+' Взаимодействие с базой данных
+Rel(auth_service, user_db, "Получает данные", "SQL")
+Rel(user_management, user_db, "Отправляет/получает данные", "SQL")
+Rel(house_management, user_db, "Отправляет/получает данные", "SQL")
+
+
+@enduml

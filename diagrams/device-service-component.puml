@@ -1,0 +1,58 @@
+@startuml C4_Components
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Компонентная диаграмма сервиса управления устройствами
+
+Container_Boundary(device_service, "Device Management Service") {
+    Component(device_api, "Device API", , "REST API для управления устройствами")
+
+    Component(kafka_producer, "Kafka Producer", , "Публикация событий устройств")
+    Component(kafka_consumer, "Kafka Consumer", , "Получение команд для устройств")
+    
+    Component(device_manager, "Device Manager", , "Управление устройством")
+    Component(command_handler, "Command Handler", , "Обработка команд управления устройствами")
+    Component(state_manager, "State Manager", , "Управление состояниями устройств")
+    Component(protocol_adapter, "Protocol Adapter", , "Адаптеры для различных протоколов устройств")
+    
+    Component(device_repository, "Device Repository", , "Доступ к данным устройств")
+    Component(state_repository, "State Repository", , "Доступ к состояниям устройств")
+}
+
+' Внешние системы
+Container_Ext(api_gateway, "API Gateway", "Kong")
+Container_Ext(kafka, "Message Broker", "Kafka")
+Container_Ext(device_db, "Device Database", "MongoDB")
+Container_Ext(smart_device, "Smart Device", "Устройство")
+
+' API взаимодействия
+Rel(api_gateway, device_api, "Отправляет запросы", "REST/JSON")
+Rel(device_api, device_manager, "Использует")
+Rel(device_api, command_handler, "Отправляет команды")
+
+' Внутренние взаимодействия
+Rel(device_manager, state_manager, "Управляет состоянием")
+Rel(device_manager, device_repository, "Сохраняет/получает данные")
+Rel(device_manager, kafka_producer, "Публикует события")
+
+Rel(command_handler, state_manager, "Проверяет состояние")
+Rel(command_handler, protocol_adapter, "Отправляет команды")
+Rel(command_handler, kafka_producer, "Публикует результаты")
+
+Rel(state_manager, state_repository, "Сохраняет/получает состояния")
+Rel(state_manager, kafka_producer, "Публикует изменения")
+
+Rel(protocol_adapter, smart_device, "Взаимодействует", "MQTT/HTTP")
+
+Rel(kafka_consumer, command_handler, "Передает команды")
+
+' Kafka взаимодействия
+Rel(kafka_producer, kafka, "Публикует события")
+Rel(kafka, kafka_consumer, "Получает команды")
+
+' База данных
+Rel(device_repository, device_db, "Использует")
+Rel(state_repository, device_db, "Использует")
+
+@enduml

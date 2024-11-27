@@ -1,0 +1,142 @@
+@startuml Device_Service_Classes
+!theme plain
+
+package "API Layer" {
+    class DeviceController {
+        + registerDevice(DeviceRegistrationRequest): DeviceDTO
+        + getDevice(String deviceId): DeviceDTO
+        + updateDevice(String deviceId, DeviceUpdateRequest): DeviceDTO
+        + deleteDevice(String deviceId): void
+        + sendCommand(String deviceId, DeviceCommand): CommandResult
+        + getDeviceState(String deviceId): DeviceState
+    }
+
+    class DeviceDTO {
+        + deviceId: String
+        + name: String
+        + type: DeviceType
+        + protocol: ProtocolType
+        + status: DeviceStatus
+        + metadata: Map<String, Object>
+    }
+}
+
+package "Domain Layer" {
+    class Device {
+        - id: String
+        - name: String
+        - type: DeviceType
+        - protocol: ProtocolType
+        - status: DeviceStatus
+        - metadata: Map<String, Object>
+        - state: DeviceState
+        + updateState(DeviceState): void
+        + executeCommand(DeviceCommand): CommandResult
+    }
+
+    class DeviceState {
+        - deviceId: String
+        - timestamp: Instant
+        - parameters: Map<String, Object>
+        - online: boolean
+        + update(Map<String, Object>): void
+    }
+
+    enum DeviceType {
+        HEATING_SYSTEM
+        LIGHTING
+        SECURITY
+        SENSOR
+    }
+
+    enum ProtocolType {
+        MQTT
+        HTTP
+        MODBUS
+        ZIGBEE
+    }
+
+    enum DeviceStatus {
+        ACTIVE
+        INACTIVE
+        MAINTENANCE
+        ERROR
+    }
+}
+
+package "Service Layer" {
+    class DeviceManager {
+        - deviceRepository: DeviceRepository
+        - stateManager: StateManager
+        - eventPublisher: DeviceEventPublisher
+        + registerDevice(Device): Device
+        + updateDevice(String, Device): Device
+        + removeDevice(String): void
+        + getDevice(String): Device
+    }
+
+    class StateManager {
+        - stateRepository: StateRepository
+        - eventPublisher: DeviceEventPublisher
+        + updateState(String, DeviceState): void
+        + getState(String): DeviceState
+        + validateState(DeviceState): boolean
+    }
+
+    class CommandHandler {
+        - deviceManager: DeviceManager
+        - protocolAdapter: ProtocolAdapter
+        - eventPublisher: DeviceEventPublisher
+        + handleCommand(String, DeviceCommand): CommandResult
+        - validateCommand(Device, DeviceCommand): boolean
+    }
+}
+
+package "Infrastructure Layer" {
+    interface DeviceRepository {
+        + save(Device): Device
+        + findById(String): Optional<Device>
+        + delete(String): void
+        + findAll(): List<Device>
+    }
+
+    interface StateRepository {
+        + saveState(DeviceState): DeviceState
+        + findStateById(String): Optional<DeviceState>
+        + deleteState(String): void
+    }
+
+    interface ProtocolAdapter {
+        + sendCommand(Device, DeviceCommand): CommandResult
+        + connect(Device): void
+        + disconnect(Device): void
+    }
+
+    class DeviceEventPublisher {
+        - kafkaTemplate: KafkaTemplate
+        + publishStateChange(Device, DeviceState): void
+        + publishCommandResult(Device, CommandResult): void
+        + publishDeviceEvent(DeviceEvent): void
+    }
+}
+
+' Relationships
+DeviceController --> DeviceManager
+DeviceController ..> DeviceDTO
+DeviceManager --> DeviceRepository
+DeviceManager --> StateManager
+DeviceManager --> DeviceEventPublisher
+StateManager --> StateRepository
+StateManager --> DeviceEventPublisher
+CommandHandler --> DeviceManager
+CommandHandler --> ProtocolAdapter
+CommandHandler --> DeviceEventPublisher
+
+Device --> DeviceType
+Device --> ProtocolType
+Device --> DeviceStatus
+Device --> DeviceState
+
+DeviceDTO ..> Device: <<converts to/from>>
+
+@enduml

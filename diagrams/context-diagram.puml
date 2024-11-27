@@ -1,0 +1,20 @@
+@startuml C4_Context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Контекстная диаграмма Задание 1. Анализ и планирование
+
+Person(homeowner, "Владелец дома", "Пользователь системы умного дома")
+
+System(smart_home_system, "Система управления умным домом", "Монолитное приложение на Java Spring Boot")
+
+System_Ext(heating_device, "Устройство отопления", "Физическое устройство управления отоплением")
+System_Ext(temp_sensor, "Датчик температуры", "Физическое устройство измерения температуры")
+
+Rel(homeowner, smart_home_system, "Использует веб-интерфейс для управления и мониторинга", "HTTPS")
+
+Rel(smart_home_system, heating_device, "Отправляет команды управления", "HTTP")
+Rel(smart_home_system, temp_sensor, "Получает данные о температуре", "HTTP")
+
+@enduml

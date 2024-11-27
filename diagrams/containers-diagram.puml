@@ -1,0 +1,59 @@
+@startuml C4_Containers
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Задание 2. Контейнерная диаграмма системы "Умный дом"
+
+Person(homeowner, "Владелец дома", "Пользователь системы умного дома")
+
+System_Boundary(smart_home_system, "Система умного дома") {
+    Container(api_gateway, "API Gateway", "Kong", "Единая точка входа, маршрутизация, аутентификация")
+    
+    Container(device_service, "Device Management Service", , "Управление устройствами и их состояниями")
+    Container(telemetry_service, "Telemetry Service", , "Сбор и обработка телеметрии")
+    Container(automation_service, "Automation Service", , "Управление сценариями автоматизации")
+    Container(user_service, "User Management Service", , "Управление пользователями и правами")
+    Container(notification_service, "Notification Service", , "Управление уведомлениями")
+    
+    ContainerDb(device_db, "Device Database", "MongoDB", "Хранение информации об устройствах")
+    ContainerDb(telemetry_db, "Telemetry Database", "VictoriaMetrics", "Хранение телеметрии")
+    ContainerDb(automation_db, "Automation Database", "PostgreSQL", "Хранение сценариев")
+    ContainerDb(user_db, "User Database", "PostgreSQL", "Хранение данных пользователей")
+    ContainerDb(notification_db, "Notification Database", "MongoDB", "Хранение уведомлений")
+    
+    ContainerQueue(kafka, "Message Broker", "Kafka", "Асинхронный обмен сообщениями")
+
+    ContainerDb(redis, "Cache", "Redis", "Кеширование данных")
+}
+
+System_Ext(smart_device, "Умное устройство", "устройство")
+
+' Внешние взаимодействия
+Rel(homeowner, api_gateway, "Использует", "HTTPS")
+Rel(smart_device, api_gateway, "Отправляет телеметрию", "HTTPS/MQTT")
+Rel(device_service, smart_device, "Управляет", "MQTT")
+
+' API Gateway взаимодействия
+Rel(api_gateway, device_service, "Запросы управления устройствами", "REST")
+Rel(api_gateway, telemetry_service, "Запросы телеметрии", "REST")
+Rel(api_gateway, automation_service, "Управление сценариями", "REST")
+Rel(api_gateway, user_service, "Управление пользователями", "REST")
+Rel(api_gateway, notification_service, "Управление уведомлениями", "REST")
+Rel(api_gateway, redis, "Кеширование", "Redis Protocol")
+
+' Взаимодействия с БД
+Rel(device_service, device_db, "Использует", "MongoDB Protocol")
+Rel(telemetry_service, telemetry_db, "Использует", "PostgreSQL Protocol")
+Rel(automation_service, automation_db, "Использует", "PostgreSQL Protocol")
+Rel(user_service, user_db, "Использует", "PostgreSQL Protocol")
+Rel(notification_service, notification_db, "Использует", "MongoDB Protocol")
+
+' Kafka взаимодействия
+Rel(device_service, kafka, "Публикует события устройств", "Kafka Protocol")
+Rel(telemetry_service, kafka, "Публикует телеметрию", "Kafka Protocol")
+Rel(automation_service, kafka, "Подписывается на события/Публикует команды", "Kafka Protocol")
+Rel(notification_service, kafka, "Подписывается на события", "Kafka Protocol")
+Rel(user_service, kafka, "Публикует события пользователей", "Kafka Protocol")
+
+@enduml
