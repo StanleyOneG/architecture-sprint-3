@@ -1,0 +1,45 @@
+@startuml C4_Components
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Компонентная диаграмма сервиса уведомлений
+
+Container_Boundary(notification_service, "Notification Service"){
+    Container(notification_api, "Notification API", , "REST API для управления уведомлениями")
+    Container(broker_producer, "Broker Producer", , "Отправляет события в брокер сообщений")
+    Container(broker_consumer, "Broker Consumer", , "Получает события из брокера сообщений")
+    Container(notification_processor, "Notification Processor", , "Обрабатывает события и отправляет уведомления")
+    Container(notification_storage, "Notification Storage", , "Управляет хранилищем уведомлений")
+    Container(smtp_server, "SMTP Server", , "Отправляет Email уведомления")
+    Container(push_server, "Push Server", , "Отправляет Push уведомления")
+}
+
+
+' Внешние системы
+Container_Ext(api_gateway, "API Gateway", "Kong")
+Container_Ext(kafka, "Message Broker", "Kafka")
+Container_Ext(notification_db, "Notification Database", "MongoDB")
+
+' API Взаимодействия
+Rel(api_gateway, notification_api, "Отправляет запросы", "REST/JSON")
+Rel(notification_api, notification_storage, "Запрашивает данные по уведомлениям")
+
+' Взаимодействие между сервисами
+Rel(notification_processor, notification_storage, "Сохраняет уведомлений")
+Rel(notification_processor, broker_producer, "Отправляет события в брокер сообщений")
+Rel(broker_consumer, notification_processor, "Команды на отправку уведомлений")
+Rel(notification_processor, smtp_server, "Отправляет задание на отправку уведомлений", "REST")
+Rel(notification_processor, push_server, "Отправляет задание на отправку уведомлений", "REST")
+
+
+' Kafka взаимодействия
+Rel(kafka, broker_consumer, "Получение события из брокера сообщений")
+Rel(broker_producer, kafka, "Отправка события в брокер сообщений")
+
+
+' Взаимодействие с базой данных
+Rel(notification_storage, notification_db, "Отправляет/получает данные", "MQL")
+
+
+@enduml

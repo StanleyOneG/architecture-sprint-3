@@ -1,0 +1,55 @@
+@startuml C4_Components
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Компонентная диаграмма сервиса управления сценариями
+
+Container_Boundary(automation_service, "Automation Service"){
+    Container(automation_api, "Automation API", , "REST API сервиса управления сценариями")
+    Container(automation_manager, "Automation Manager", , "Управления сценариями")
+
+    Container(broker_consumer, "Broker Consumer", , "Получает события из брокера")
+    Container(broker_producer, "Broker Producer", , "Отправляет события в брокер")
+
+    Container(automation_repository, "Automation Repository", , "Хранилище сценариев")
+
+    Container(automation_scheduler, "Automation Scheduler", , "Планировщик сценариев")
+    Container(automation_executor, "Automation Executor", , "Исполнитель сценариев")
+    ' Container(automation_metrics, "Automation Metrics", , "Метрики сценариев")
+
+
+}
+
+
+' Внешние системы
+Container_Ext(api_gateway, "API Gateway", "Kong")
+Container_Ext(automation_db, "Automation Database", "PostgreSQL")
+Container_Ext(kafka, "Message Broker", "Kafka")
+
+
+' API взаимодействия
+Rel(api_gateway, automation_api, "Отправляет запросы", "REST/JSON")
+Rel(automation_api, automation_manager, "Отправляет запросы", "REST/JSON")
+
+
+' Взаимодействие между сервисами
+' Rel(automation_manager, automation_metrics, "Отправляет/получает данные", "REST/JSON")
+Rel(automation_manager, automation_repository, "Получает данные", "REST/JSON")
+Rel(automation_manager, automation_scheduler, "Отправляет/получает данные", "REST/JSON")
+Rel(automation_scheduler, automation_executor, "Отправляет запросы/Получает данные", "REST/JSON")
+' Rel(automation_executor, automation_repository, "Отправляет/получает данные", "REST/JSON")
+Rel(automation_executor, broker_producer, "Отправляет задание на публикацию события", "REST/JSON")
+' Rel(automation_metrics, automation_scheduler, "Отправляет/получает данные", "REST/JSON")
+Rel(broker_consumer, automation_manager, "Отправляет задания на выполнение/Уведомляет о статусе выполнения сценария", "REST/JSON")
+Rel(automation_scheduler, automation_repository, "Сохраняет данные сценариев", "REST/JSON")
+
+
+' Kafka взаимодействия
+Rel(broker_producer, kafka, "Публикует события", "Kafka")
+Rel(broker_consumer, kafka, "Подписывается на события", "Kafka")
+
+' Взаимодействие с базой данных
+Rel(automation_repository, automation_db, "Отправляет/получает данные", "SQL")
+
+@enduml

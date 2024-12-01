@@ -1,0 +1,43 @@
+@startuml C4_Components
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Компонентная диаграмма сервиса управления телеметией
+
+Container_Boundary(telemetry_service, "Telemetry Service"){
+    Component(telemetry_api, "Telemetry API", , "REST API для управления телеметрией")
+
+    Component(telemetry_manager, "Telemetry Manager", , "Управление телеметрией")
+    Component(telemetry_repository, "Telemetry Repository", , "Доступ к хранилищу телеметрии")
+
+    Component(broker_producer, "Broker Producer", , "Отправка сообщений в брокер")
+    Component(broker_consumer, "Broker Consumer", , "Получение сообщений из брокера")
+
+
+}
+
+
+' Внешние системы
+Container_Ext(api_gateway, "API Gateway", "Kong")
+Container_Ext(telemetry_db, "Telemetry Database", "VictoriaMetrics")
+Container_Ext(kafka, "Message Broker", "Kafka")
+
+' API взаимодействия
+Rel(api_gateway, telemetry_api, "Отправляет запросы", "REST/JSON")
+Rel(telemetry_api, telemetry_manager, "Вызывает методы", "REST/JSON")
+
+' Взаимодействие между сервисами
+Rel(telemetry_manager, telemetry_repository, "Отправляет/получает данные", "REST")
+Rel(telemetry_manager, broker_producer, "Отправляет команды на публикацию события", "REST")
+Rel(broker_consumer, telemetry_manager, "Отправляет команды", "REST")
+
+
+' Kafka взаимодействия
+Rel(broker_producer, kafka, "Публикует события", "Kafka")
+Rel(kafka, broker_consumer, "Получает события", "Kafka")
+
+' Взаимодействие с базой данных
+Rel(telemetry_repository, telemetry_db, "Отправляет/получает данные", "MetricsQL")
+
+@enduml

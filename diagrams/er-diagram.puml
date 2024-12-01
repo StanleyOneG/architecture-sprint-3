@@ -1,0 +1,137 @@
+@startuml ER_Diagram
+
+!theme plain
+
+hide circle
+
+title Задание 3. ER-Диаграмма
+
+
+entity "User" as user {
+  *id : UUID <<PK>>
+  --
+  *username : VARCHAR
+  *email : VARCHAR
+  *password_hash : VARCHAR
+  *created_at : TIMESTAMP
+  *updated_at : TIMESTAMP
+  status : VARCHAR
+}
+
+entity "House" as house {
+  *id : UUID <<PK>>
+  --
+  *name : VARCHAR
+  *address : VARCHAR
+  *owner_id : UUID <<FK>>
+  timezone : VARCHAR
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+entity "Room" as room {
+  *id : UUID <<PK>>
+  --
+  *name : VARCHAR
+  *house_id : UUID <<FK>>
+  floor : INTEGER
+  area : DECIMAL
+}
+
+entity "Device" as device {
+  *id : UUID <<PK>>
+  --
+  *name : VARCHAR
+  *type_id : UUID <<FK>>
+  *room_id : UUID <<FK>>
+  *protocol : VARCHAR
+  *status : VARCHAR
+  *serial_number : VARCHAR
+  *created_at : TIMESTAMP
+  *updated_at : TIMESTAMP
+}
+
+entity "DeviceType" as deviceType {
+  *id : UUID <<PK>>
+  --
+  *name : VARCHAR
+  *category : VARCHAR
+  description : TEXT
+}
+
+entity "DeviceState" as deviceState {
+  *id : UUID <<PK>>
+  --
+  *device_id : UUID <<FK>>
+  *timestamp : TIMESTAMP
+  *state : JSONB
+  metadata : JSONB
+}
+
+entity "TelemetryData" as telemetry {
+  *id : UUID <<PK>>
+  --
+  *device_id : UUID <<FK>>
+  *timestamp : TIMESTAMP
+  *metric_name : VARCHAR
+  *value : DECIMAL
+  unit : VARCHAR
+}
+
+entity "AutomationRule" as automationRule {
+  *id : UUID <<PK>>
+  --
+  *name : VARCHAR
+  *house_id : UUID <<FK>>
+  *created_by : UUID <<FK>>
+  *condition : JSONB
+  *actions : JSONB
+  *status : VARCHAR
+  schedule : VARCHAR
+  priority : INTEGER
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+entity "Notification" as notification {
+  *id : UUID <<PK>>
+  --
+  *user_id : UUID <<FK>>
+  *type : VARCHAR
+  *message : TEXT
+  *status : VARCHAR
+  *created_at : TIMESTAMP
+  read_at : TIMESTAMP
+  metadata : JSONB
+}
+
+' Связи
+
+' User - House (one-to-many)
+user::id ||-left-o{ house::owner_id : owns
+
+' House - Room (one-to-many)
+house::id ||-left-o{ room::house_id : contains
+
+' Room - Device (one-to-many)
+room::id ||--o{ device::room_id : contains
+
+' Device - DeviceType (many-to-one)
+device::type_id }o--|| deviceType::id : is of type
+
+' Device - DeviceState (one-to-many)
+device::id ||--o{ deviceState::device_id : has
+
+' Device - TelemetryData (one-to-many)
+device::id ||--o{ telemetry::device_id : generates
+
+' House - AutomationRule (one-to-many)
+house::id ||--o{ automationRule::house_id : has
+
+' User - AutomationRule (one-to-many)
+user::id ||--o{ automationRule::created_by : creates
+
+' User - Notification (one-to-many)
+user::id ||-down-o{ notification::user_id : receives
+
+@enduml
